@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tạo Bảng Tài Khoản và Mật Khẩu</title>
+    <!-- Thêm Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .input-container {
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            padding: 8px;
+            width: 100%;
+            font-size: 16px;
+            margin-bottom: 10px;
+            height: 150px;
+            resize: vertical;
+        }
+
+        .highlight {
+            background-color: #ffeb3b;
+            /* Màu vàng cho dòng được highlight */
+        }
+
+        @media (max-width: 768px) {
+            textarea {
+                font-size: 14px;
+            }
+
+            button {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+        }
+
+        /* Vị trí thông báo */
+        .toast {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1055;
+        }
+
+        /* Style cho upload button */
+        .file-upload-container {
+            margin-top: 20px;
+        }
+
+        #fileUpload {
+            font-size: 14px;
+        }
+
+        /* Styles for clicked buttons */
+        .btn-success-clicked {
+            background-color: #28a745;
+            /* Green */
+        }
+
+        .btn-warning-clicked {
+            background-color: #ffc107;
+            /* Yellow */
+        }
+
+        .btn-info-clicked {
+            background-color: #17a2b8;
+            /* Blue */
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2 class="text-center mb-4">Tạo Bảng Tài Khoản và Mật Khẩu</h2>
+
+    <div class="input-container">
+        <label for="inputText" class="form-label">Dán danh sách tài khoản và mật khẩu vào đây:</label>
+        <textarea id="inputText" class="form-control" placeholder="Dán danh sách ở đây..."></textarea>
+        <!-- File upload section -->
+        <div class="file-upload-container">
+            <label for="fileUpload" class="form-label">Chọn file để tải lên:</label>
+            <input type="file" id="fileUpload" class="form-control">
+        </div>
+        <button class="btn btn-primary mt-3" onclick="processData()">Tạo Bảng</button>
+    </div>
+
+    <!-- Thêm div table-responsive -->
+    <div class="table-responsive">
+        <table id="accountTable" class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>STT</th> <!-- Cột số thứ tự -->
+                    <th>Tài Khoản</th>
+                    <th>Mật Khẩu</th>
+                    <th>Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Dữ liệu tài khoản sẽ được thêm vào đây -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Toast thông báo sao chép -->
+    <div id="toastNotification" class="toast align-items-center text-white bg-success border-0 d-none" role="alert"
+        aria-live="assertive" aria-atomic="true" style="max-width: 300px;">
+        <div class="d-flex">
+            <div class="toast-body" id="toastMessage">
+                <!-- Thông báo sao chép sẽ hiển thị ở đây -->
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                aria-label="Close"></button>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Thêm Bootstrap và các thư viện phụ thuộc -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function processData() {
+            const inputText = document.getElementById('inputText').value.trim();
+            const lines = inputText.split('\n');
+            const accounts = [];
+
+            // Tách tài khoản và mật khẩu từ từng dòng
+            lines.forEach(line => {
+                const parts = line.split('|');
+                if (parts.length >= 2) {
+                    accounts.push({
+                        username: parts[0].trim(),
+                        password: parts[1].trim(),
+                        otherDetails: parts.slice(2).join('|').trim() // Lấy các phần còn lại
+                    });
+                }
+            });
+
+            // Gọi hàm để tạo bảng từ dữ liệu đã tách
+            generateTable(accounts);
+        }
+
+        function generateTable(accounts) {
+            const tableBody = document.getElementById('accountTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = ''; // Xóa bảng cũ trước khi thêm dữ liệu mới
+
+            accounts.forEach((account, index) => {
+                const row = tableBody.insertRow();
+
+                const cell1 = row.insertCell(0);
+                const cell2 = row.insertCell(1);
+                const cell3 = row.insertCell(2);
+                const cell4 = row.insertCell(3); // Cột cho thao tác
+
+                // Thêm số thứ tự vào cột đầu tiên
+                cell1.textContent = index + 1;
+
+                // Thêm tài khoản và mật khẩu vào các cột tiếp theo
+                cell2.textContent = account.username;
+                cell3.textContent = account.password;
+
+                // Nút "Sao chép TK"
+                const copyUsernameButton = document.createElement('button');
+                copyUsernameButton.textContent = 'Sao chép TK';
+                copyUsernameButton.classList.add('btn', 'btn-success', 'me-2');
+                copyUsernameButton.onclick = () => {
+                    copyToClipboard(account.username, 'Tài khoản');
+                    handleButtonClick(copyUsernameButton, 'Sao chép TK');
+                };
+                cell4.appendChild(copyUsernameButton);
+
+                // Nút "Sao chép MK"
+                const copyPasswordButton = document.createElement('button');
+                copyPasswordButton.textContent = 'Sao chép MK';
+                copyPasswordButton.classList.add('btn', 'btn-warning');
+                copyPasswordButton.onclick = () => {
+                    copyToClipboard(account.password, 'Mật khẩu');
+                    handleButtonClick(copyPasswordButton, 'Sao chép MK');
+                    highlightRow(row);
+                };
+                cell4.appendChild(copyPasswordButton);
+
+                // Nút "Sao chép Full"
+                const copyFullButton = document.createElement('button');
+                copyFullButton.textContent = 'Sao chép Full';
+                copyFullButton.classList.add('btn', 'btn-info');
+                copyFullButton.onclick = () => {
+                    copyToClipboard(account.username + '|' + account.password + '|' + account.otherDetails, 'Tất cả');
+                    handleButtonClick(copyFullButton, 'Sao chép Full');
+                    highlightFullRow(row); // Gọi hàm highlight khi sao chép full
+                };
+                cell4.appendChild(copyFullButton);
+
+                // Kiểm tra xem dòng này có được highlight không
+                const highlightedRowIndex = localStorage.getItem('highlightedRowIndex');
+                if (highlightedRowIndex && parseInt(highlightedRowIndex) === index) {
+                    row.classList.add('highlight');
+                }
+            });
+        }
+
+        function copyToClipboard(text, type) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            // Hiển thị thông báo toast sao chép
+            const toastElement = document.getElementById('toastNotification');
+            const toastMessage = document.getElementById('toastMessage');
+            toastMessage.textContent = `Đã sao chép ${type}: ${text}`;
+
+            // Xóa lớp `d-none` và hiển thị toast
+            toastElement.classList.remove('d-none');
+            const toast = new bootstrap.Toast(toastElement);
+            toast.show();
+        }
+
+        function highlightRow(row) {
+            row.classList.add('highlight');
+
+            // Lưu chỉ số của dòng đã được highlight vào localStorage
+            const rowIndex = row.rowIndex - 1;  // Vị trí dòng trong bảng (bỏ qua header)
+            localStorage.setItem('highlightedRowIndex', rowIndex);
+        }
+
+        function highlightFullRow(row) {
+            // Xóa highlight của các dòng trước đó
+            const rows = document.querySelectorAll('#accountTable tbody tr');
+            rows.forEach(r => r.classList.remove('highlight'));
+
+            // Thêm highlight cho dòng hiện tại
+            row.classList.add('highlight');
+        }
+
+        // File upload handler
+        $('#fileUpload').on('change', function (e) {
+            var file = e.target.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function (event) {
+                    var fileContent = event.target.result;
+                    var lines = fileContent.split('\n');
+                    if (lines[0].startsWith("ORDER:")) {
+                        lines.shift(); // Loại bỏ dòng đầu nếu có
+                    }
+                    var modifiedContent = lines.join('\n');
+
+                    // Hiển thị nội dung file vào textarea
+                    $('#inputText').val(modifiedContent);
+
+                    // Gọi hàm processData để xử lý ngay khi file được tải lên
+                    processData();
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        // Handle button state persistence
+        function handleButtonClick(button, actionType) {
+            if (actionType === 'Sao chép TK') {
+                button.classList.add('btn-success-clicked');
+                localStorage.setItem('copyTKClicked', true);
+            } else if (actionType === 'Sao chép MK') {
+                button.classList.add('btn-warning-clicked');
+                localStorage.setItem('copyMKClicked', true);
+            } else if (actionType === 'Sao chép Full') {
+                button.classList.add('btn-info-clicked');
+                localStorage.setItem('copyFullClicked', true);
+            }
+        }
+
+        // Restore button colors based on saved state from localStorage
+        document.addEventListener('DOMContentLoaded', function () {
+            if (localStorage.getItem('copyTKClicked')) {
+                document.querySelectorAll('.btn-success').forEach(btn => btn.classList.add('btn-success-clicked'));
+            }
+            if (localStorage.getItem('copyMKClicked')) {
+                document.querySelectorAll('.btn-warning').forEach(btn => btn.classList.add('btn-warning-clicked'));
+            }
+            if (localStorage.getItem('copyFullClicked')) {
+                document.querySelectorAll('.btn-info').forEach(btn => btn.classList.add('btn-info-clicked'));
+            }
+
+            // Restore row highlight from localStorage
+            const highlightedRowIndex = localStorage.getItem('highlightedRowIndex');
+            if (highlightedRowIndex !== null) {
+                const rows = document.querySelectorAll('#accountTable tbody tr');
+                const rowToHighlight = rows[highlightedRowIndex];
+                if (rowToHighlight) {
+                    rowToHighlight.classList.add('highlight');
+                }
+            }
+        });
+    </script>
+
+</body>
+
+</html>
